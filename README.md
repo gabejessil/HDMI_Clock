@@ -1,1 +1,1 @@
-# HDMI_Vertical_Bars
+# HDMI_Clock
