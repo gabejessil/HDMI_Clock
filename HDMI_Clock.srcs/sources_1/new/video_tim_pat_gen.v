@@ -53,35 +53,37 @@ module video_tim_pat_gen(
     reg [7:0] green;
     reg [7:0] blue;
     
-    // Hour Indicator Coordinate LUT; Column 0 = Horizontal; Column 1 = Vertical
-    reg [10:0] hr_coo [0:11][0:1];
-    
+    // Hour Indicator Coordinate LUT; Column 0 = Horizontal; Column 1 = Vertical; Pixel color flag
+    reg [10:0] hour_loc [0:11][0:1];
+    reg pixel_white = 1'b0;
+    integer i;
+
     initial begin
-        hr_coo[0][0] = 11'd640;
-        hr_coo[1][0] = 11'd815;
-        hr_coo[2][0] = 11'd943;
-        hr_coo[3][0] = 11'd990;
-        hr_coo[4][0] = 11'd943;
-        hr_coo[5][0] = 11'd846;
-        hr_coo[6][0] = 11'd640;
-        hr_coo[7][0] = 11'd465;
-        hr_coo[8][0] = 11'd337;
-        hr_coo[9][0] = 11'd290;
-        hr_coo[10][0] = 11'd337;
-        hr_coo[11][0] = 11'd465;
-        
-        hr_coo[0][1] = 11'd10;
-        hr_coo[1][1] = 11'd57;
-        hr_coo[2][1] = 11'd185;
-        hr_coo[3][1] = 11'd360;
-        hr_coo[4][1] = 11'd535;
-        hr_coo[5][1] = 11'd643;
-        hr_coo[6][1] = 11'd710;
-        hr_coo[7][1] = 11'd663;
-        hr_coo[8][1] = 11'd535;
-        hr_coo[9][1] = 11'd360;
-        hr_coo[10][1] = 11'd185;
-        hr_coo[11][1] = 11'd57;
+        hour_loc[0][0] = 11'd640;
+        hour_loc[1][0] = 11'd790;
+        hour_loc[2][0] = 11'd900;
+        hour_loc[3][0] = 11'd940;
+        hour_loc[4][0] = 11'd900;
+        hour_loc[5][0] = 11'd817;
+        hour_loc[6][0] = 11'd640;
+        hour_loc[7][0] = 11'd490;
+        hour_loc[8][0] = 11'd380;
+        hour_loc[9][0] = 11'd340;
+        hour_loc[10][0] = 11'd380;
+        hour_loc[11][0] = 11'd490;
+    
+        hour_loc[0][1] = 11'd60;
+        hour_loc[1][1] = 11'd100;
+        hour_loc[2][1] = 11'd210;
+        hour_loc[3][1] = 11'd360;
+        hour_loc[4][1] = 11'd510;
+        hour_loc[5][1] = 11'd603;
+        hour_loc[6][1] = 11'd660;
+        hour_loc[7][1] = 11'd620;
+        hour_loc[8][1] = 11'd510;
+        hour_loc[9][1] = 11'd360;
+        hour_loc[10][1] = 11'd210;
+        hour_loc[11][1] = 11'd100;
     end
     
     // Counter Loop, counts across H and V Pixels
@@ -102,6 +104,8 @@ module video_tim_pat_gen(
         end        
     end
     
+    //
+    
     // Determine Video Data Enable and if the horizontal & vertical counters are within their Sync Pulse
     assign vid_pVDE = !rst && (h_cnt < H_ACT && v_cnt < V_ACT);
     assign vid_pHSync = !rst && (h_cnt >= (H_ACT + H_FRO) && h_cnt < (H_ACT + H_FRO + H_SYN));
@@ -118,31 +122,23 @@ module video_tim_pat_gen(
                 red <= 8'h00;
                 green <= 8'h00;
                 blue <= 8'h00;
-            end else if (((h_cnt <= ((H_ACT-V_ACT)>>1)+20) && (h_cnt >= (H_ACT-V_ACT)>>1)) &&
-                         ((v_cnt <= (V_ACT>>1)+10) && (v_cnt >=(V_ACT>>1)-10))) begin
-                red <= 8'hff;
-                green <= 8'hff;
-                blue <= 8'hff;
-            end else if (((h_cnt <= V_ACT+((H_ACT-V_ACT)>>1)) && (h_cnt >= V_ACT+(((H_ACT-V_ACT)>>1)-20))) &&
-                         ((v_cnt <= (V_ACT>>1)+10) && (v_cnt >=(V_ACT>>1)-10))) begin
-                red <= 8'hff;
-                green <= 8'hff;
-                blue <= 8'hff; 
-            end else if (((h_cnt <= (H_ACT>>1)+10) && (h_cnt >= (H_ACT>>1)-10)) &&
-                         ((v_cnt <= 20) && (v_cnt >=0))) begin
-                red <= 8'hff;
-                green <= 8'hff;
-                blue <= 8'hff;
-            end else if (((h_cnt <= (H_ACT>>1)+10) && (h_cnt >= (H_ACT>>1)-10)) &&
-                         ((v_cnt <= V_ACT) && (v_cnt >=V_ACT-20))) begin
-                red <= 8'hff;
-                green <= 8'hff;
-                blue <= 8'hff;    
-                   
             end else begin
-                red <= 8'h00;
-                green <= 8'h00;
-                blue <= 8'h00;
+                for (i = 0; i < 12; i = i +1) begin
+                    if((h_cnt < (hour_loc[i][0] + 10) && h_cnt >= (hour_loc[i][0] - 10)) &&
+                        (v_cnt < (hour_loc[i][1] + 10) && v_cnt >= (hour_loc[i][1] - 10))) begin
+                        pixel_white = 1'b1;
+                    end                 
+                end
+                if (pixel_white) begin
+                    red <= 8'hff;
+                    green <= 8'hff;
+                    blue <= 8'hff;
+                end else begin             
+                   red <= 8'h00;
+                   green <= 8'h00;
+                   blue <= 8'h00;
+                end
+                pixel_white <= 1'b0;            
             end
         end
     end
